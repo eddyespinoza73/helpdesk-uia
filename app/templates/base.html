@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block titulo %}Help Desk UIA{% endblock %}</title>
+  <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo.css') }}">
+</head>
+<body>
+  {% if session.id_usuario %}
+  {% from "_iconos.html" import grid, ticket as icono_ticket, mas, grafico, escudo, salir %}
+  <header class="navbar">
+    <div class="navbar__inner">
+      <a class="navbar__brand" href="{{ url_for('tickets.dashboard') }}">
+        <span class="navbar__brand-mark">HD</span>
+        Help Desk UIA
+      </a>
+      <nav class="navbar__links">
+        <a href="{{ url_for('tickets.dashboard') }}" class="{{ 'is-active' if request.endpoint == 'tickets.dashboard' else '' }}">{{ grid() }}Dashboard</a>
+        <a href="{{ url_for('tickets.lista') }}" class="{{ 'is-active' if request.endpoint == 'tickets.lista' else '' }}">{{ icono_ticket() }}Tickets</a>
+        <a href="{{ url_for('tickets.nuevo') }}" class="{{ 'is-active' if request.endpoint == 'tickets.nuevo' else '' }}">{{ mas() }}Nuevo ticket</a>
+        <a href="{{ url_for('reportes.estado') }}" class="{{ 'is-active' if request.endpoint == 'reportes.estado' else '' }}">{{ grafico() }}Reporte por estado</a>
+        <a href="{{ url_for('reportes.sla') }}" class="{{ 'is-active' if request.endpoint == 'reportes.sla' else '' }}">{{ escudo() }}Reporte SLA</a>
+      </nav>
+      <div class="navbar__user">
+        <span class="navbar__user-name">{{ session.nombre }}</span>
+        <span class="badge badge--rol">{{ session.rol }}</span>
+        <a href="{{ url_for('auth.logout') }}" class="btn btn--ghost btn--sm">{{ salir() }}Salir</a>
+      </div>
+    </div>
+  </header>
+  {% endif %}
+
+  <main class="page {% block page_class %}{% endblock %}">
+    {% with mensajes = get_flashed_messages(with_categories=true) %}
+      {% if mensajes %}
+        {% from "_iconos.html" import alerta, circulo_check %}
+        <div class="flash-stack">
+          {% for categoria, mensaje in mensajes %}
+            <div class="flash flash--{{ categoria }}">
+              {{ circulo_check() if categoria == 'ok' else alerta() }}
+              {{ mensaje }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>
