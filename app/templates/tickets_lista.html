@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% from "_iconos.html" import ticket, bandeja %}
+{% block titulo %}Tickets — Help Desk UIA{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Tickets</h1>
+    <p>{{ tickets | length }} ticket{{ 's' if tickets | length != 1 else '' }} en total.</p>
+  </div>
+  <a href="{{ url_for('tickets.nuevo') }}" class="btn btn--primary">{{ ticket() }}Nuevo ticket</a>
+</div>
+
+<div class="card">
+  <div class="tabla-wrap">
+    {% if tickets %}
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Título</th>
+          <th>Categoría</th>
+          <th>Prioridad</th>
+          <th>Estado</th>
+          <th>Solicitante</th>
+          <th>Técnico</th>
+          <th>Apertura</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in tickets %}
+        <tr>
+          <td>#{{ t.id_ticket }}</td>
+          <td>{{ t.titulo }}</td>
+          <td>{{ t.categoria }}</td>
+          <td><span class="badge badge--{{ t.prioridad | lower }}">{{ t.prioridad }}</span></td>
+          <td><span class="badge badge--{{ t.estado | lower | replace(' ', '-') }}">{{ t.estado }}</span></td>
+          <td>{{ t.solicitante }}</td>
+          <td>{{ t.tecnico or '—' }}</td>
+          <td>{{ t.fecha_apertura.strftime('%d/%m/%Y %H:%M') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="tabla-vacia">
+      <span class="tabla-vacia__icono">{{ bandeja() }}</span>
+      Todavía no hay tickets. Creá el primero.
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

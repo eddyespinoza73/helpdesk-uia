@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% from "_iconos.html" import ticket, bandeja, reloj, alerta, circulo_check %}
+{% block titulo %}Dashboard — Help Desk UIA{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Hola, {{ session.nombre.split(' ')[0] }}</h1>
+    <p>Resumen general de los tickets{{ '' if session.rol in ('Administrador', 'Tecnico') else ' que abriste' }}.</p>
+  </div>
+  <a href="{{ url_for('tickets.nuevo') }}" class="btn btn--primary">{{ ticket('icono') }}Nuevo ticket</a>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-tile">
+    <div class="stat-tile__top">
+      <span class="stat-tile__label">Total</span>
+      <span class="stat-tile__icono stat-tile__icono--neutral">{{ bandeja() }}</span>
+    </div>
+    <div class="stat-tile__value">{{ resumen.total }}</div>
+  </div>
+  <div class="stat-tile">
+    <div class="stat-tile__top">
+      <span class="stat-tile__label">Abiertos</span>
+      <span class="stat-tile__icono stat-tile__icono--accent">{{ alerta() }}</span>
+    </div>
+    <div class="stat-tile__value">{{ resumen.abiertos }}</div>
+  </div>
+  <div class="stat-tile">
+    <div class="stat-tile__top">
+      <span class="stat-tile__label">En proceso</span>
+      <span class="stat-tile__icono stat-tile__icono--warn">{{ reloj() }}</span>
+    </div>
+    <div class="stat-tile__value">{{ resumen.en_proceso }}</div>
+  </div>
+  <div class="stat-tile">
+    <div class="stat-tile__top">
+      <span class="stat-tile__label">Resueltos</span>
+      <span class="stat-tile__icono stat-tile__icono--ok">{{ circulo_check() }}</span>
+    </div>
+    <div class="stat-tile__value">{{ resumen.resueltos }}</div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Tickets recientes</h2>
+  <div class="tabla-wrap" style="margin-top: 1rem;">
+    {% if recientes %}
+    <table>
+      <thead>
+        <tr>
+          <th>Título</th>
+          <th>Estado</th>
+          <th>Prioridad</th>
+          <th>Solicitante</th>
+          <th>Apertura</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in recientes %}
+        <tr>
+          <td>{{ t.titulo }}</td>
+          <td><span class="badge badge--{{ t.estado | lower | replace(' ', '-') }}">{{ t.estado }}</span></td>
+          <td><span class="badge badge--{{ t.prioridad | lower }}">{{ t.prioridad }}</span></td>
+          <td>{{ t.solicitante }}</td>
+          <td>{{ t.fecha_apertura.strftime('%d/%m/%Y %H:%M') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="tabla-vacia">
+      <span class="tabla-vacia__icono">{{ bandeja() }}</span>
+      Todavía no hay tickets.
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

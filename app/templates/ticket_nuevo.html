@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% from "_iconos.html" import mas %}
+{% block titulo %}Nuevo ticket — Help Desk UIA{% endblock %}
+{% block page_class %}page--centrada{% endblock %}
+
+{% block content %}
+<div class="card" style="width: 100%;">
+  <h1 style="margin-bottom: 0.35rem;">Nuevo ticket</h1>
+  <p style="color: var(--color-text-muted); font-size: 0.875rem; margin-bottom: 1.5rem;">
+    Describí el problema con el mayor detalle posible.
+  </p>
+
+  <form method="POST" action="{{ url_for('tickets.nuevo') }}">
+    <div class="campo">
+      <label for="titulo">Título</label>
+      <input type="text" id="titulo" name="titulo" placeholder="Ej: No puedo acceder al correo" value="{{ datos.titulo }}" required autofocus minlength="5" maxlength="240">
+    </div>
+
+    <div class="campo">
+      <label for="descripcion">Descripción</label>
+      <textarea id="descripcion" name="descripcion" placeholder="Contá qué pasó, cuándo empezó y qué mensajes de error viste." required>{{ datos.descripcion }}</textarea>
+    </div>
+
+    <div class="campo-fila">
+      <div class="campo">
+        <label for="id_categoria">Categoría</label>
+        <select id="id_categoria" name="id_categoria" required>
+          <option value="" disabled {{ "selected" if not datos.id_categoria }}>Elegí una categoría</option>
+          {% for c in categorias %}
+          <option value="{{ c.id_categoria }}" {{ "selected" if datos.id_categoria|string == c.id_categoria|string }}>{{ c.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="campo">
+        <label for="id_prioridad">Prioridad</label>
+        <select id="id_prioridad" name="id_prioridad" required>
+          <option value="" disabled {{ "selected" if not datos.id_prioridad }}>Elegí una prioridad</option>
+          {% for p in prioridades %}
+          <option value="{{ p.id_prioridad }}" {{ "selected" if datos.id_prioridad|string == p.id_prioridad|string }}>{{ p.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn--primary btn--full">{{ mas() }}Crear ticket</button>
+  </form>
+</div>
+{% endblock %}
