@@ -85,6 +85,33 @@ app/
 
 Pensado para Render (`Procfile` con `gunicorn`) + Azure SQL como base de datos en la nube. Antes de desplegar, actualizar las variables de entorno en el servicio de hosting con los datos de la instancia de Azure SQL y **no** commitear nunca el archivo `.env`.
 
+### Deploy en Render
+
+Render corre sobre Ubuntu y no trae preinstalado el driver ODBC de Microsoft para SQL Server, así que `render-build.sh` lo instala en cada build antes de `pip install`. Pasos manuales en [render.com](https://render.com):
+
+1. **New + → Web Service** y conectar el repo `eddyespinoza73/helpdesk-uia`.
+2. Configurar el servicio:
+   - **Runtime:** Python 3
+   - **Build Command:** `./render-build.sh`
+   - **Start Command:** `gunicorn run:app`
+   - **Plan:** Free
+3. En la sección **Environment**, agregar estas variables (mismas llaves que `.env.example`):
+
+   | Variable       | Valor |
+   |----------------|-------|
+   | `SECRET_KEY`   | una clave larga y aleatoria (no reutilizar la de local) |
+   | `DB_SERVER`    | endpoint de Azure SQL, ej. `helpdesk-uia.database.windows.net` |
+   | `DB_NAME`      | `helpdesk_uia` |
+   | `DB_USER`      | usuario de BD (ej. `app_helpdesk`) |
+   | `DB_PASSWORD`  | password de ese usuario |
+   | `DB_DRIVER`    | `{ODBC Driver 18 for SQL Server}` (recomendado en Render/Ubuntu 22; `render-build.sh` lee esta misma variable para instalar la versión 17 o 18 según corresponda) |
+   | `FLASK_DEBUG`  | `False` |
+
+4. **Create Web Service**. Render clona el repo, corre `render-build.sh` (instala el driver ODBC + `pip install -r requirements.txt`) y arranca con `gunicorn run:app`.
+5. Verificar en la pestaña **Logs** que el build termine con `Build completo (driver msodbcsqlXX)` y que gunicorn levante sin errores de conexión a la BD.
+
+**Nota:** si `DB_SERVER` apunta a una instancia de Azure SQL Database serverless (no siempre activa), el primer request después de un período de inactividad puede tardar unos segundos en responder mientras la base "despierta" — es esperado.
+
 ## Nota de curso
 
 Proyecto final del curso **Implementación y Mantenimiento de Software** — Universidad Interamericana de Costa Rica (UIA).
