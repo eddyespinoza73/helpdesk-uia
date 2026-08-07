@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% from "_iconos.html" import bandeja, circulo_check, alerta, escudo %}
+{% block titulo %}Reporte SLA — Help Desk UIA{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Cumplimiento de SLA</h1>
+    <p>Horas transcurridas contra el compromiso definido por categoría y prioridad.</p>
+  </div>
+</div>
+
+<div class="resumen-sla">
+  <div class="stat-tile">
+    <div class="stat-tile__top">
+      <span class="stat-tile__label">Total tickets</span>
+      <span class="stat-tile__icono stat-tile__icono--neutral">{{ bandeja() }}</span>
+    </div>
+    <div class="stat-tile__value">{{ resumen.total }}</div>
+  </div>
+  <div class="stat-tile">
+    <div class="stat-tile__top">
+      <span class="stat-tile__label">Cumplidos</span>
+      <span class="stat-tile__icono stat-tile__icono--ok">{{ circulo_check() }}</span>
+    </div>
+    <div class="stat-tile__value" style="color: var(--color-ok);">{{ resumen.cumplidos }}</div>
+  </div>
+  <div class="stat-tile">
+    <div class="stat-tile__top">
+      <span class="stat-tile__label">Incumplidos</span>
+      <span class="stat-tile__icono stat-tile__icono--warn">{{ alerta() }}</span>
+    </div>
+    <div class="stat-tile__value" style="color: var(--color-error);">{{ resumen.incumplidos }}</div>
+  </div>
+  <div class="stat-tile">
+    <div class="stat-tile__top">
+      <span class="stat-tile__label">% Cumplimiento</span>
+      <span class="stat-tile__icono stat-tile__icono--accent">{{ escudo() }}</span>
+    </div>
+    <div class="stat-tile__value">{{ resumen.porcentaje }}%</div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Por técnico</h2>
+  <div class="tabla-wrap" style="margin-top: 1rem;">
+    {% if por_tecnico %}
+    <table>
+      <thead>
+        <tr>
+          <th>Técnico</th>
+          <th>Tickets asignados</th>
+          <th>Cumplidos</th>
+          <th>% Cumplimiento</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in por_tecnico %}
+        <tr>
+          <td>{{ t.tecnico }}</td>
+          <td>{{ t.total }}</td>
+          <td>{{ t.cumplidos }}</td>
+          <td>
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <span style="font-weight: 600;">{{ t.porcentaje }}%</span>
+              <div class="barra-progreso" style="flex: 1; margin-top: 0;">
+                <div class="barra-progreso__relleno" style="width: {{ t.porcentaje }}%;"></div>
+              </div>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="tabla-vacia">
+      <span class="tabla-vacia__icono">{{ bandeja() }}</span>
+      Todavía no hay tickets asignados a un técnico.
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="tabla-wrap">
+    {% if filas %}
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Título</th>
+          <th>Categoría</th>
+          <th>Prioridad</th>
+          <th>Estado</th>
+          <th>Compromiso (h)</th>
+          <th>Transcurridas (h)</th>
+          <th>SLA</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for f in filas %}
+        <tr>
+          <td>#{{ f.id_ticket }}</td>
+          <td>{{ f.titulo }}</td>
+          <td>{{ f.categoria }}</td>
+          <td><span class="badge badge--{{ f.prioridad | lower }}">{{ f.prioridad }}</span></td>
+          <td><span class="badge badge--{{ f.estado | lower | replace(' ', '-') }}">{{ f.estado }}</span></td>
+          <td>{{ f.horas_compromiso }}</td>
+          <td>{{ f.horas_transcurridas | round(1) }}</td>
+          <td>
+            {% if f.cumple == 1 %}
+            <span class="badge badge--cumple">Cumple</span>
+            {% else %}
+            <span class="badge badge--incumple">Incumple</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="tabla-vacia">
+      <span class="tabla-vacia__icono">{{ bandeja() }}</span>
+      Todavía no hay tickets para evaluar SLA.
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
