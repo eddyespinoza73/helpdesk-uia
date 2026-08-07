@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% from "_iconos.html" import flecha_izq, mas %}
+{% block titulo %}Ticket #{{ ticket.id_ticket }} — Help Desk UIA{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <p style="margin-bottom: 0.4rem;">
+      <a href="{{ url_for('tickets.lista') }}" style="display: inline-flex; align-items: center; gap: 0.35rem; color: var(--color-text-muted); font-size: 0.85rem;">
+        {{ flecha_izq() }} Volver a tickets
+      </a>
+    </p>
+    <h1>#{{ ticket.id_ticket }} — {{ ticket.titulo }}</h1>
+  </div>
+  <div style="display: flex; gap: 0.5rem;">
+    <span class="badge badge--{{ ticket.prioridad | lower }}">{{ ticket.prioridad }}</span>
+    <span class="badge badge--{{ ticket.estado | lower | replace(' ', '-') }}">{{ ticket.estado }}</span>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Descripción</h2>
+  <p style="margin-top: 0.75rem; color: var(--color-text); white-space: pre-wrap;">{{ ticket.descripcion }}</p>
+</div>
+
+<div class="card">
+  <h2>Información</h2>
+  <div class="info-grid">
+    <div>
+      <div class="info-grid__label">Solicitante</div>
+      <div>{{ ticket.solicitante }}</div>
+      <div style="color: var(--color-text-muted); font-size: 0.8rem;">{{ ticket.solicitante_correo }}</div>
+    </div>
+    <div>
+      <div class="info-grid__label">Categoría</div>
+      <div>{{ ticket.categoria }}</div>
+    </div>
+    <div>
+      <div class="info-grid__label">Técnico asignado</div>
+      <div>{{ ticket.tecnico or 'Sin asignar' }}</div>
+    </div>
+    <div>
+      <div class="info-grid__label">Apertura</div>
+      <div>{{ ticket.fecha_apertura.strftime('%d/%m/%Y %H:%M') }}</div>
+    </div>
+    <div>
+      <div class="info-grid__label">Cierre</div>
+      <div>{{ ticket.fecha_cierre.strftime('%d/%m/%Y %H:%M') if ticket.fecha_cierre else '—' }}</div>
+    </div>
+  </div>
+</div>
+
+{% if puede_gestionar %}
+<div class="card">
+  <h2>Gestionar ticket</h2>
+  <form method="POST" action="{{ url_for('tickets.detalle', id_ticket=ticket.id_ticket) }}" style="margin-top: 1.1rem;">
+    <div class="campo-fila">
+      <div class="campo">
+        <label for="id_estado">Nuevo estado</label>
+        <select id="id_estado" name="id_estado" required>
+          {% for e in estados %}
+          <option value="{{ e.id_estado }}" {{ "selected" if e.id_estado == ticket.id_estado }}>{{ e.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% if tecnicos %}
+      <div class="campo">
+        <label for="id_tecnico">Asignar técnico</label>
+        <select id="id_tecnico" name="id_tecnico">
+          <option value="">Sin asignar</option>
+          {% for t in tecnicos %}
+          <option value="{{ t.id_tecnico }}">{{ t.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+    </div>
+    <div class="campo">
+      <label for="comentario">Comentario (opcional)</label>
+      <textarea id="comentario" name="comentario" placeholder="Detalle del cambio, diagnóstico, pasos seguidos..."></textarea>
+    </div>
+    <button type="submit" class="btn btn--primary">{{ mas() }}Guardar cambio</button>
+  </form>
+</div>
+{% endif %}
+
+<div class="card">
+  <h2>Historial de cambios</h2>
+  <div class="timeline">
+    <div class="timeline__item">
+      <div class="timeline__punto"></div>
+      <div class="timeline__contenido">
+        <div class="timeline__cabecera">
+          <span class="badge badge--abierto">Ticket creado</span>
+          <span class="timeline__fecha">{{ ticket.fecha_apertura.strftime('%d/%m/%Y %H:%M') }}</span>
+        </div>
+        <p class="timeline__texto">Abierto por {{ ticket.solicitante }}.</p>
+      </div>
+    </div>
+    {% for h in historial %}
+    <div class="timeline__item">
+      <div class="timeline__punto"></div>
+      <div class="timeline__contenido">
+        <div class="timeline__cabecera">
+          {% if h.estado_anterior %}
+          <span class="badge badge--{{ h.estado_anterior | lower | replace(' ', '-') }}">{{ h.estado_anterior }}</span>
+          <span style="color: var(--color-text-faint);">→</span>
+          {% endif %}
+          <span class="badge badge--{{ h.estado_nuevo | lower | replace(' ', '-') }}">{{ h.estado_nuevo }}</span>
+          <span class="timeline__fecha">{{ h.fecha_cambio.strftime('%d/%m/%Y %H:%M') }}</span>
+        </div>
+        <p class="timeline__texto">
+          {{ ('Cambio realizado por ' + h.tecnico) if h.tecnico else 'Cambio realizado por un administrador' }}{{ ':' if h.comentario else '.' }}
+        </p>
+        {% if h.comentario %}
+        <p class="timeline__comentario">{{ h.comentario }}</p>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

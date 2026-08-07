@@ -58,8 +58,8 @@
       </thead>
       <tbody>
         {% for t in recientes %}
-        <tr>
-          <td>{{ t.titulo }}</td>
+        <tr class="fila-clickeable" onclick="window.location='{{ url_for('tickets.detalle', id_ticket=t.id_ticket) }}'">
+          <td><a href="{{ url_for('tickets.detalle', id_ticket=t.id_ticket) }}">{{ t.titulo }}</a></td>
           <td><span class="badge badge--{{ t.estado | lower | replace(' ', '-') }}">{{ t.estado }}</span></td>
           <td><span class="badge badge--{{ t.prioridad | lower }}">{{ t.prioridad }}</span></td>
           <td>{{ t.solicitante }}</td>

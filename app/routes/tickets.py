@@ -1,8 +1,18 @@
-"""Rutas de tickets: dashboard, listado y creacion."""
-from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+"""Rutas de tickets: dashboard, listado, creacion y detalle/cambio de estado."""
+from flask import Blueprint, abort, flash, redirect, render_template, request, session, url_for
 
 from app.db import obtener_conexion
-from app.models.ticket import crear_ticket, listar_tickets, obtener_catalogos
+from app.models.ticket import (
+    actualizar_estado,
+    crear_ticket,
+    listar_tickets,
+    obtener_catalogos,
+    obtener_estados,
+    obtener_historial,
+    obtener_tecnicos,
+    obtener_ticket_detalle,
+)
+from app.models.usuario import obtener_id_tecnico
 from app.utils.decoradores import login_requerido
 
 tickets_bp = Blueprint("tickets", __name__)
@@ -71,3 +81,63 @@ def nuevo():
             return redirect(url_for("tickets.lista"))
 
     return render_template("ticket_nuevo.html", categorias=categorias, prioridades=prioridades, datos=datos)
+
+
+@tickets_bp.route("/tickets/<int:id_ticket>", methods=["GET", "POST"])
+@login_requerido
+def detalle(id_ticket):
+    conn = obtener_conexion()
+    cursor = conn.cursor()
+    ticket = obtener_ticket_detalle(cursor, id_ticket)
+    if ticket is None:
+        abort(404)
+
+    puede_gestionar = session.get("rol") in ROLES_CON_VISTA_COMPLETA
+    es_propio = ticket.id_usuario == session["id_usuario"]
+
+    if not puede_gestionar and not es_propio:
+        flash("No tenés permiso para ver ese ticket.", "error")
+        return redirect(url_for("tickets.lista"))
+
+    if request.method == "POST":
+        if not puede_gestionar:
+            flash("No tenés permiso para modificar este ticket.", "error")
+            return redirect(url_for("tickets.detalle", id_ticket=id_ticket))
+
+        id_estado_nuevo = request.form.get("id_estado", "")
+        id_tecnico_asignar = request.form.get("id_tecnico") or None
+        comentario = request.form.get("comentario", "").strip() or None
+
+        if not id_estado_nuevo:
+            flash("Elegí un estado.", "error")
+        else:
+            id_tecnico_autor = obtener_id_tecnico(cursor, session["id_usuario"])
+            try:
+                actualizar_estado(
+                    cursor,
+                    id_ticket,
+                    ticket.id_estado,
+                    int(id_estado_nuevo),
+                    int(id_tecnico_asignar) if id_tecnico_asignar else None,
+                    id_tecnico_autor,
+                    comentario,
+                )
+            except Exception:
+                conn.rollback()
+                raise
+            conn.commit()
+            flash("Ticket actualizado correctamente.", "ok")
+            return redirect(url_for("tickets.detalle", id_ticket=id_ticket))
+
+    historial = obtener_historial(cursor, id_ticket)
+    estados = obtener_estados(cursor)
+    tecnicos = obtener_tecnicos(cursor) if ticket.id_tecnico is None else []
+
+    return render_template(
+        "ticket_detalle.html",
+        ticket=ticket,
+        historial=historial,
+        estados=estados,
+        tecnicos=tecnicos,
+        puede_gestionar=puede_gestionar,
+    )

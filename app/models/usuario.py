@@ -42,6 +42,14 @@ def procesar_login(cursor, correo, password_valido):
     return fila.resultado, fila.id_usuario
 
 
+def obtener_id_tecnico(cursor, id_usuario):
+    """Devuelve el id_tecnico asociado a un usuario, o None si no es tecnico
+    (ej. un Administrador que no tiene fila en la tabla Tecnico)."""
+    cursor.execute("SELECT id_tecnico FROM Tecnico WHERE id_usuario = ? AND activo = 1", id_usuario)
+    fila = cursor.fetchone()
+    return fila.id_tecnico if fila else None
+
+
 def obtener_usuario_por_id(cursor, id_usuario):
     cursor.execute(
         """
