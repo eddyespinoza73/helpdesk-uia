@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% from "_iconos.html" import flecha_izq %}
+{% block titulo %}Página no encontrada — Help Desk UIA{% endblock %}
+
+{% block content %}
+<div class="error-page">
+  <div class="error-page__codigo">404</div>
+  <h2>No encontramos esta página</h2>
+  <p>El enlace puede estar roto o la página se movió de lugar.</p>
+  <a href="{{ url_for('auth.raiz') }}" class="btn btn--primary">{{ flecha_izq() }}Volver al inicio</a>
+</div>
+{% endblock %}
