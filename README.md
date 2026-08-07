@@ -70,7 +70,8 @@ La app queda disponible en **http://127.0.0.1:5000**.
 run.py                    Punto de entrada (python run.py)
 seed_passwords.py         Fija hashes bcrypt de los usuarios demo
 requirements.txt
-Procfile                  Deploy en Render (gunicorn)
+Dockerfile                Imagen para deploy en Render (instala msodbcsql18 + gunicorn)
+Procfile                  Sin uso mientras el deploy sea con Docker (queda de referencia)
 app/
   config.py               Configuracion cargada desde .env
   db.py                   Conexion a SQL Server via pyodbc
@@ -83,19 +84,20 @@ app/
 
 ## Deploy
 
-Pensado para Render (`Procfile` con `gunicorn`) + Azure SQL como base de datos en la nube. Antes de desplegar, actualizar las variables de entorno en el servicio de hosting con los datos de la instancia de Azure SQL y **no** commitear nunca el archivo `.env`.
+Pensado para Render (deploy con **Docker**) + Azure SQL como base de datos en la nube. Antes de desplegar, actualizar las variables de entorno en el servicio de hosting con los datos de la instancia de Azure SQL y **no** commitear nunca el archivo `.env`.
 
-### Deploy en Render
+### Deploy en Render (Docker)
 
-Render corre sobre Ubuntu y no trae preinstalado el driver ODBC de Microsoft para SQL Server, así que `render-build.sh` lo instala en cada build antes de `pip install`. Pasos manuales en [render.com](https://render.com):
+El runtime nativo de Python en Render tiene el filesystem en solo lectura y no permite `apt-get install`, así que no se puede instalar ahí el driver ODBC de Microsoft (`msodbcsql18`) que pyodbc necesita para hablar con SQL Server. Por eso el deploy usa el `Dockerfile` del repo, que instala el driver dentro de la imagen antes de correr la app.
+
+Con Docker, Render **detecta el `Dockerfile` automáticamente** — no hace falta configurar Build Command ni Start Command a mano (esos campos ni siquiera aparecen; el build corre `docker build` sobre el `Dockerfile` y el arranque es el `CMD` que ya está definido ahí). El viejo `render-build.sh` (para el runtime nativo) ya no se usa y se borró del repo.
+
+Pasos manuales en [render.com](https://render.com):
 
 1. **New + → Web Service** y conectar el repo `eddyespinoza73/helpdesk-uia`.
-2. Configurar el servicio:
-   - **Runtime:** Python 3
-   - **Build Command:** `./render-build.sh`
-   - **Start Command:** `gunicorn run:app`
-   - **Plan:** Free
-3. En la sección **Environment**, agregar estas variables (mismas llaves que `.env.example`):
+2. Render va a detectar el `Dockerfile` solo y va a mostrar **Runtime: Docker**. No tocar Build/Start Command — quedan fijados por el `Dockerfile`.
+3. Elegir **Plan: Free**.
+4. En la sección **Environment**, agregar estas variables (mismas llaves que `.env.example`):
 
    | Variable       | Valor |
    |----------------|-------|
@@ -104,8 +106,14 @@ Render corre sobre Ubuntu y no trae preinstalado el driver ODBC de Microsoft par
    | `DB_NAME`      | `helpdesk_uia` |
    | `DB_USER`      | usuario de BD (ej. `app_helpdesk`) |
    | `DB_PASSWORD`  | password de ese usuario |
-   | `DB_DRIVER`    | `{ODBC Driver 18 for SQL Server}` (recomendado en Render/Ubuntu 22; `render-build.sh` lee esta misma variable para instalar la versión 17 o 18 según corresponda) |
+   | `DB_DRIVER`    | `{ODBC Driver 18 for SQL Server}` (el `Dockerfile` instala la versión 18, que es la que hay que declarar acá) |
    | `FLASK_DEBUG`  | `False` |
+
+   `PORT` la define Render solo (no hace falta agregarla) — el contenedor escucha en `0.0.0.0:$PORT` según el `CMD` del `Dockerfile`.
+5. **Create Web Service**. Render construye la imagen (instala `msodbcsql18` + `pip install -r requirements.txt`) y arranca con `gunicorn run:app --bind 0.0.0.0:$PORT`.
+6. Verificar en la pestaña **Logs** que el build de Docker termine bien y que gunicorn levante sin errores de conexión a la BD.
+
+**Nota:** si `DB_SERVER` apunta a una instancia de Azure SQL Database serverless (no siempre activa), el primer request después de un período de inactividad puede tardar unos segundos en responder mientras la base "despierta" — es esperado.
 
 4. **Create Web Service**. Render clona el repo, corre `render-build.sh` (instala el driver ODBC + `pip install -r requirements.txt`) y arranca con `gunicorn run:app`.
 5. Verificar en la pestaña **Logs** que el build termine con `Build completo (driver msodbcsqlXX)` y que gunicorn levante sin errores de conexión a la BD.
