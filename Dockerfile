@@ -1,6 +1,9 @@
-# python:3.11-slim resuelve hoy a Debian 12 (bookworm) — por eso el repo de
-# Microsoft que se agrega mas abajo es especificamente el de debian/12.
-FROM python:3.11-slim
+# Fijado a bookworm (Debian 12) a proposito: python:3.11-slim paso a
+# apuntar a Debian 13 (trixie), que rechaza las firmas SHA1 con las que
+# packages.microsoft.com firma su repo. El .deb que se instala mas abajo
+# es especificamente el de debian/12, asi que la imagen tiene que quedar
+# fija en bookworm hasta que Microsoft actualice sus firmas.
+FROM python:3.11-slim-bookworm
 
 # Dependencias de sistema necesarias para agregar el repo de Microsoft
 # e instalar el driver ODBC.
