@@ -1,6 +1,19 @@
 # Help Desk UIA
 
+**App en producción:** https://helpdesk-uia.onrender.com — probar con `ana.ramirez@empresa.cr` / `Demo123!` (ver más credenciales en [Credenciales de prueba](#credenciales-de-prueba)).
+
 Sistema de mesa de ayuda (login, gestión de tickets y reportes) desarrollado con Flask y SQL Server. Incluye autenticación con bcrypt y procedimiento almacenado, control de acceso por rol, cambio de estado de tickets con historial transaccional, y 2 reportes (por estado/prioridad y cumplimiento de SLA).
+
+## Funcionalidades
+
+- Login validado (campos vacíos, credenciales incorrectas, bloqueo por 3 intentos fallidos, cuenta inactiva)
+- Gestión completa de tickets (crear, listar, ver detalle)
+- Cambio de estado de tickets con historial transaccional (auditoría automática)
+- Asignación y reasignación de técnicos con registro en historial
+- 2 reportes: tickets por estado/prioridad y cumplimiento de SLA por técnico
+- Control de acceso por rol (Administrador, Técnico, Usuario)
+- Retry automático de conexión para Azure SQL serverless
+- Manejo de errores con páginas 404 y 500 personalizadas
 
 ## Stack
 
@@ -14,7 +27,7 @@ Sistema de mesa de ayuda (login, gestión de tickets y reportes) desarrollado co
 
 - Python 3.11+
 - SQL Server con la base de datos `helpdesk_uia` ya creada (11 tablas) y el procedimiento `sp_procesar_login` instalado
-- ODBC Driver 17 (o compatible) para SQL Server instalado en la máquina
+- ODBC Driver 17 **o** 18 para SQL Server instalado en la máquina (cualquiera de los dos sirve en local — Render usa 18 porque es el que instala el `Dockerfile`, ver sección Deploy)
 - Un usuario de SQL Server con acceso a `helpdesk_uia` (`db_datareader`, `db_datawriter`, `EXECUTE` sobre `sp_procesar_login`)
 
 ## Instalación
@@ -44,6 +57,7 @@ Sistema de mesa de ayuda (login, gestión de tickets y reportes) desarrollado co
    SECRET_KEY=una_clave_larga_y_aleatoria
    FLASK_DEBUG=False
    ```
+   `DB_DRIVER` acepta `{ODBC Driver 17 for SQL Server}` o `{ODBC Driver 18 for SQL Server}` — usá el que tengas instalado local. En Render (Docker) esta variable siempre va con **18**, porque es el único que el `Dockerfile` instala en la imagen.
 5. (Opcional, solo la primera vez) Fijar las contraseñas de los usuarios de prueba con hash bcrypt real:
    ```
    python seed_passwords.py
@@ -75,7 +89,7 @@ Procfile                  Sin uso mientras el deploy sea con Docker (queda de re
 app/
   config.py               Configuracion cargada desde .env
   db.py                   Conexion a SQL Server via pyodbc
-  routes/                 auth.py, tickets.py, reportes.py
+  routes/                 auth.py, tickets.py (CRUD + cambio de estado y asignación de técnico), reportes.py
   models/                 Consultas SQL: usuario.py, ticket.py, reporte.py
   utils/decoradores.py    login_requerido
   templates/               Vistas Jinja (login, dashboard, tickets, reportes, errores)
@@ -115,11 +129,6 @@ Pasos manuales en [render.com](https://render.com):
 
 **Nota:** si `DB_SERVER` apunta a una instancia de Azure SQL Database serverless (no siempre activa), el primer request después de un período de inactividad puede tardar unos segundos en responder mientras la base "despierta" — es esperado.
 
-4. **Create Web Service**. Render clona el repo, corre `render-build.sh` (instala el driver ODBC + `pip install -r requirements.txt`) y arranca con `gunicorn run:app`.
-5. Verificar en la pestaña **Logs** que el build termine con `Build completo (driver msodbcsqlXX)` y que gunicorn levante sin errores de conexión a la BD.
-
-**Nota:** si `DB_SERVER` apunta a una instancia de Azure SQL Database serverless (no siempre activa), el primer request después de un período de inactividad puede tardar unos segundos en responder mientras la base "despierta" — es esperado.
-
 ## Nota de curso
 
-Proyecto final del curso **Implementación y Mantenimiento de Software** — Universidad Interamericana de Costa Rica (UIA).
+Proyecto final del curso **Implementación y Mantenimiento de Software** — Universidad Internacional de las Américas (UIA).
